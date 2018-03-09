@@ -65,41 +65,66 @@ char* nameVal(char* buf, int colNum){
 }
 
 //Function to find top 10 tweeters...
-struct Hashmap findMax(struct Hashmap values[], struct Hashmap *max){ 
+struct Hashmap findMax(struct Hashmap values[], struct Hashmap max[]){ 
 
-	for(int j = 0; j < 10; j++){
+	struct Hashmap smallerVal;
+	max = values;
+
+	for(int i = 0; i < MAP_SIZE; i++){
+		if(!max[i].tweeter)
+			break;
+		for(int j = i+1; j < MAP_SIZE; j++){
+			if(!max[j].tweeter)
+				break;
+
+			if(max[i].tweets < max[j].tweets){
+				smallerVal = max[i];
+				max[i] = max[j];
+				max[j] = smallerVal;
+			}
+		}
+	}
+
+	for(int i = 0; i < 10; i++){
+		if(!max[i].tweeter)
+			break;
+		else{
+			printf("%s: %d\n", max[i].tweeter, max[i].tweets);
+		}
+	}
+	return *max;
+
+	/*for(int j = 0; j < 10; j++){
 		for(int i = 0; i < MAP_SIZE; i++){
 			if(!values[i].tweeter)
 				break;
-			else{
-				if(j == 0){
-					if(max[j].tweets < values[i].tweets){
+			if(j == 0){
+				if(max[j].tweets < values[i].tweets){
+					max[j] = values[i];
+				}
+			} else {
+				if(max[j].tweets < values[i].tweets){
+					if(values[i].tweets < max[j-1].tweets){
 						max[j] = values[i];
-					}
-				} else {
-					if(max[j].tweets < values[i].tweets){
-						if(values[i].tweets < max[j-1].tweets){
-							max[j] = values[i];
-						}
 					}
 				}
 			}
 		}
 	}
-	return *max;
+	return *max;*/
 }
 
 int main(int argc, char** argv)
 {
 
-	// FILE *file = fopen("cl-tweets-short.csv", "r");
 	FILE *file = fopen(argv[1], "r");
+	FILE *fp = fopen("file.txt", "ab");
 	char* tweeter; 	//Tweeter for tweet being read
 	char buf[BUFFER_SIZE]; // buffer for the entire line
 	struct Hashmap values[MAP_SIZE]; // hashmap of all the tweets and their tweeters
 	int itr = 0;	// itr through the values array
 	int foundName; // boolean value to check if name exists
-	struct Hashmap max[10]; // array of the top 10 tweeters
+	struct Hashmap max[MAP_SIZE]; // array of the top 10 tweeters
 
 	fgets(buf, BUFFER_SIZE, file);
 	int colNum = locCol(buf, "name");
@@ -120,16 +145,17 @@ int main(int argc, char** argv)
 
 	findMax(values, max);
 
-	for(int k = 0; k < 10; k++){
+	/*for(int k = 0; k < 10; k++){
 		printf("%s: %d\n", max[k].tweeter, max[k].tweets);
-	}
+	}*/
 	
 		// -------FINAL CHECK-------
 	/*for(int i = 0; i < MAP_SIZE; i++){
 		if(!values[i].tweeter)
 			break;
-		else
-			printf("Value_name: %s and Value_tweets: %d\n", values[i].tweeter, values[i].tweets);
+		else{
+			fprintf(fp, "Value_name: %s and Value_tweets: %d\n", values[i].tweeter, values[i].tweets);
+		}
 	}*/
 
 	//Loop to print top ten, from largest tweet # to lowest! Might need to use a sorting algorithm on values[i].tweets... Poop.
