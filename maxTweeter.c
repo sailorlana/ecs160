@@ -65,10 +65,9 @@ char* nameVal(char* buf, int colNum){
 }
 
 //Function to find top 10 tweeters...
-struct Hashmap findMax(struct Hashmap values[], struct Hashmap max[]){ 
+struct Hashmap findMax(struct Hashmap max[]){ 
 
 	struct Hashmap smallerVal;
-	max = values;
 
 	for(int i = 0; i < MAP_SIZE; i++){
 		if(!max[i].tweeter)
@@ -85,33 +84,7 @@ struct Hashmap findMax(struct Hashmap values[], struct Hashmap max[]){
 		}
 	}
 
-	for(int i = 0; i < 10; i++){
-		if(!max[i].tweeter)
-			break;
-		else{
-			printf("%s: %d\n", max[i].tweeter, max[i].tweets);
-		}
-	}
 	return *max;
-
-	/*for(int j = 0; j < 10; j++){
-		for(int i = 0; i < MAP_SIZE; i++){
-			if(!values[i].tweeter)
-				break;
-			if(j == 0){
-				if(max[j].tweets < values[i].tweets){
-					max[j] = values[i];
-				}
-			} else {
-				if(max[j].tweets < values[i].tweets){
-					if(values[i].tweets < max[j-1].tweets){
-						max[j] = values[i];
-					}
-				}
-			}
-		}
-	}
-	return *max;*/
 }
 
 int main(int argc, char** argv)
@@ -129,6 +102,10 @@ int main(int argc, char** argv)
 	fgets(buf, BUFFER_SIZE, file);
 	int colNum = locCol(buf, "name");
 
+	if(colNum == -1){
+		printf("Invalid Input Format");
+	}
+
 	while(fgets(buf, BUFFER_SIZE, file)){
 		foundName = 0;
 		tweeter = nameVal(buf, colNum);
@@ -143,11 +120,13 @@ int main(int argc, char** argv)
 		} 
 	}
 
-	findMax(values, max);
+	findMax(values);
 
-	/*for(int k = 0; k < 10; k++){
-		printf("%s: %d\n", max[k].tweeter, max[k].tweets);
-	}*/
+	for(int k = 0; k < 10; k++){
+		if(!values[k].tweeter)
+			break;
+		printf("%s: %d\n", values[k].tweeter, values[k].tweets);
+	}
 	
 		// -------FINAL CHECK-------
 	/*for(int i = 0; i < MAP_SIZE; i++){
