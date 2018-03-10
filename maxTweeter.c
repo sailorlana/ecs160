@@ -6,43 +6,76 @@
 #define BUFFER_SIZE 1024
 #define MAP_SIZE 20001
 
-struct Hashmap {
+struct Hashmap 								//For storing usernames and corresponding number of tweets	
+{																		
 	char* tweeter;
 	int tweets;
 };
 
-//Receive value from specified column in csv file
-const int locCol(char* buf, char* colName){
-	char* tok;
-	char tok_rq[100]; //tok string with quotation marks removed
+const int locCol(char* buf, char* colName)				//Receiving value from specified column in csv file
+{								
+	char* tok;							//Incoming token string, to be received from "name" column 
+	char tok_rq[100]; 						//Token string with quotation marks removed
 	int colNum = 0;
+	void* error;
 	
-    for (tok = strtok(buf, ","); tok && *tok; tok = strtok(NULL, ",")) //Doesn't check the last column value...
+    for (tok = strtok(buf, ","); tok && *tok; tok = strtok(NULL, ","))	//Getting tokens separated by commas until we reach NULL 
     {   
-    	int len = strlen(tok);
+	
+    	int len = strlen(tok);											
+    	
+	if(len == 0)
+	{
+		fprintf(stderr, "Error: two commas in a row, or NULL field in input file.\n");
+		return -1;
+	}
 
-    	memcpy(tok_rq, &tok[1], len-2);
-    	tok_rq[len-2] = '\0';
-        if(strcmp(tok_rq, colName) != 0){
+    	if((tok[0] == '"') && (tok[len-1] == '"'))			//Making sure the username is in quotes: if yes, remove
+    	{
+    		error = memcpy(tok_rq, &tok[1], len-2);
+    	}
+    	else								//If username not in quotes, no action need be taken,
+    	{								//but since we're working with toq_rq later, just copy over
+    		error = memcpy(tok_rq, &tok[0], len-1);
+    	} 
+
+    	if(error == NULL)						//If memcpy did not return a valid pointer
+    	{
+    		fprintf(stderr, "Error: could not remove quotes around username.\n");
+    		return -1;
+    	}
+    	
+    	tok_rq[len-2] = '\0';						//Making sure token ends with an appropriate value 
+        
+        if(strcmp(tok_rq, colName) != 0)				//Looping through columns until we reach "name"
+        {								
         	colNum++;
-        } else {
+        } 
+        else 
+        {
         	return colNum;
         }
 
     }
+    
+    fprintf(stderr, "Error: no \"name\" column found.\n");
     return -1;
 }
 
-//Function to check if tweeter had already been stored
-int checkName(struct Hashmap values[], char* name){
-
-	for(int i = 0; i < MAP_SIZE; i++){
-		if(values[i].tweeter){
-			if(strcmp(values[i].tweeter, name) == 0){
+int checkName(struct Hashmap values[], char* name)			//Checking if username has appeared before
+{
+	for(int i = 0; i < MAP_SIZE; i++)
+	{
+		if(values[i].tweeter)
+		{
+			if(strcmp(values[i].tweeter, name) == 0)
+			{
 				values[i].tweets++;
 				return 1;
 			}
-		} else {
+		} 
+		else 
+		{
 			return 0;
 		}
 	}
@@ -91,13 +124,11 @@ int main(int argc, char** argv)
 {
 
 	FILE *file = fopen(argv[1], "r");
-	FILE *fp = fopen("file.txt", "ab");
 	char* tweeter; 	//Tweeter for tweet being read
 	char buf[BUFFER_SIZE]; // buffer for the entire line
 	struct Hashmap values[MAP_SIZE]; // hashmap of all the tweets and their tweeters
 	int itr = 0;	// itr through the values array
-	int foundName; // boolean value to check if name exists
-	struct Hashmap max[MAP_SIZE]; // array of the top 10 tweeters
+	int foundName = 0; // boolean value to check if name exists
 
 	fgets(buf, BUFFER_SIZE, file);
 	int colNum = locCol(buf, "name");
@@ -107,10 +138,9 @@ int main(int argc, char** argv)
 	}
 
 	while(fgets(buf, BUFFER_SIZE, file)){
-		foundName = 0;
 		tweeter = nameVal(buf, colNum);
 
-		int foundName = checkName(values, tweeter);
+		foundName = checkName(values, tweeter);
 
 		if(foundName != 1){
 			values[itr].tweeter = (char *) malloc(100);
@@ -127,18 +157,6 @@ int main(int argc, char** argv)
 			break;
 		printf("%s: %d\n", values[k].tweeter, values[k].tweets);
 	}
-	
-		// -------FINAL CHECK-------
-	/*for(int i = 0; i < MAP_SIZE; i++){
-		if(!values[i].tweeter)
-			break;
-		else{
-			fprintf(fp, "Value_name: %s and Value_tweets: %d\n", values[i].tweeter, values[i].tweets);
-		}
-	}*/
-
-	//Loop to print top ten, from largest tweet # to lowest! Might need to use a sorting algorithm on values[i].tweets... Poop.
-    
 	fclose(file);
     return 0;
 }
