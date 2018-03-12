@@ -12,42 +12,40 @@ struct Hashmap 								//For storing usernames and corresponding number of tweet
 	int tweets;
 };
 
-const int locCol(char* buf, char* colName)				//Receiving value from specified column in csv file
+const int locCol(char* buf)				//Receiving value from specified column in csv file
 {								
 	char* tok;							//Incoming token string, to be received from "name" column 
 	char tok_rq[100]; 						//Token string with quotation marks removed
 	int colNum = 0;
 	void* error;
+	int numCols = 0;
 	
     for (tok = strtok(buf, ","); tok && *tok; tok = strtok(NULL, ","))	//Getting tokens separated by commas until we reach NULL 
     {   
-	
     	int len = strlen(tok);											
     	
-	if(len == 0)
-	{
-		fprintf(stderr, "Error: Invalid Input Format.\n");
-		return -1;
-	}
+		if(len == 0)
+		{
+			break;
+		}
 
     	if((tok[0] == '"') && (tok[len-1] == '"'))			//Making sure the username is in quotes: if yes, remove
     	{
     		error = memcpy(tok_rq, &tok[1], len-2);
     	}
     	else								//If username not in quotes, no action need be taken,
-    	{								//but since we're working with toq_rq later, just copy over
+    	{									//but since we're working with toq_rq later, just copy over
     		error = memcpy(tok_rq, &tok[0], len-1);
     	} 
 
     	if(error == NULL)						//If memcpy did not return a valid pointer
     	{
-    		fprintf(stderr, "Error: Invalid Input Format.\n");
-    		return -1;
+    		break;
     	}
     	
     	tok_rq[len-2] = '\0';						//Making sure token ends with an appropriate value 
         
-        if(strcmp(tok_rq, colName) != 0)				//Looping through columns until we reach "name"
+        if(strcmp(tok_rq, "name") != 0)				//Looping through columns until we reach "name"
         {								
         	colNum++;
         } 
@@ -55,14 +53,12 @@ const int locCol(char* buf, char* colName)				//Receiving value from specified c
         {
         	return colNum;
         }
-
     }
-    
-    fprintf(stderr, "Error: Invalid Input Format.\n");
     return -1;
 }
 
-int checkName(struct Hashmap values[], char* name)			//Checking if username has appeared before
+//Checking if username has appeared before
+int checkName(struct Hashmap values[], char* name)			
 {
 	for(int i = 0; i < MAP_SIZE; i++)
 	{
@@ -82,15 +78,15 @@ int checkName(struct Hashmap values[], char* name)			//Checking if username has 
 	return 0;
 }
 
+//Determining which column contains usernames
 char* nameVal(char* buf, int colNum)
-{									//Determining which column contains usernames
+{									
 	int ctr = 0;
 	char* tok;
 	tok = strtok(buf, ",");
 	
 	if(strlen(tok) == 0)
         {
-                fprintf(stderr, "Error: Invalid Input Format.\n");
                 return "err";
         }
 
@@ -101,8 +97,7 @@ char* nameVal(char* buf, int colNum)
 
 		if(strlen(tok) == 0)
 	        {
-        	        fprintf(stderr, "Error: Invalid Input Format.\n");
-			return "err";
+				return "err";
         	}
 		ctr++;
 	}
@@ -114,7 +109,8 @@ char* nameVal(char* buf, int colNum)
 	return "err";
 }
 
-struct Hashmap findMax(struct Hashmap max[])				//Finding top 10 tweeters
+//Finding top 10 tweeters
+struct Hashmap findMax(struct Hashmap max[])				
 { 
 
 	struct Hashmap smallerVal;
@@ -140,6 +136,13 @@ struct Hashmap findMax(struct Hashmap max[])				//Finding top 10 tweeters
 	return *max;							//Returns a struct with sorted usernames
 }
 
+int countChars( char* s, char c )
+{
+    return *s == '\0'
+              ? 0
+              : countChars( s + 1, c ) + (*s == c);
+}
+
 int main(int argc, char** argv)
 {
 
@@ -147,54 +150,87 @@ int main(int argc, char** argv)
 
 	if(file == NULL)
 	{
-		fprintf(stderr, "Error: Invalid Input Format\n");
-		return -1;
+		printf("Invalid Input Format\n");
+		return 0;
 	}
 	
 	char* tweeter; 							//Tweeter for tweet being read
 	char buf[BUFFER_SIZE]; 						//Buffer that contains the entire line
 	struct Hashmap values[MAP_SIZE]; 				//Hashmap that contains all the users + tweet count
 	int itr = 0;							//Iterator through the values array
+	int asd = 0;
 	int foundName = 0; 						//Boolean value to check if name exists
-
+	int numCols = 0;
+	char* tok;
+	int numComs = 0;
+	char buf_cpy[BUFFER_SIZE];
 	void* error = fgets(buf, BUFFER_SIZE, file);
+	strcpy(buf_cpy, buf);
+
+	for (tok = strtok(buf_cpy, ","); tok && *tok; tok = strtok(NULL, ",")){
+		numCols++;
+	}
+
+	if(strlen(buf) > 375)
+	{
+		printf("Invalid Input Format\n");
+		return 0;
+	}
 	
 	if(error == NULL)
 	{
-		fprintf(stderr, "Error: Invalid Input Format\n");
-		return -1;
+		printf("Invalid Input Format\n");
+		return 0;
 	}
 
-	int colNum = locCol(buf, "name");				//Finding the "name" column
+	int colNum = locCol(buf);				//Finding the "name" column
 
 	if(colNum == -1)
 	{
-		fprintf(stderr, "Error: Invalid Input Format\n");
-		return -1;
+		printf("Invalid Input Format\n");
+		return 0;
 	}
 
 	while(fgets(buf, BUFFER_SIZE, file))
 	{
+		numComs = countChars(buf, ',');
+		if(strlen(buf) > 376)
+		{
+			printf("Invalid Input Format\n");
+			return 0;
+		}
+
+
+		if(numComs != (numCols-1)){
+			printf("Invalid Input Format\n");
+			return 0;
+		}
+
 		tweeter = nameVal(buf, colNum);				//Getting users from the "name" column
+
+		
+
+		
 		
 		if(strcmp(tweeter, "err") == 0)
 		{
-			fprintf(stderr, "Error: Invalid Input Format\n");
-			return -1;
+			printf("Invalid Input Format\n");
+			return 0;
 		}
 
 		foundName = checkName(values, tweeter);			//Check if username has appeared before
 
-		if(foundName != 1)					//If name appearing for the first time, store it
+		if(foundName != 1)								//If name appearing for the first time, store it
 		{
 			values[itr].tweeter = (char *) malloc(100);
 			strcpy(values[itr].tweeter, tweeter);
 			values[itr].tweets = 1;
 			itr++;
 		} 
+		asd++;
 	}
 
-	findMax(values);
+	findMax(values); // sorts the hashmap by number of tweets
 
 	for(int k = 0; k < 10; k++)
 	{
@@ -207,8 +243,7 @@ int main(int argc, char** argv)
 	
 	if(error2 == -1)
 	{
-		fprintf(stderr, "Error: Could not close file.\n");
-		return -1;
+		printf("Invalid Input Format\n");
 	}
 
     return 0;
